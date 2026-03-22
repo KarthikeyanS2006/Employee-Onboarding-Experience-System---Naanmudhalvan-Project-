@@ -57,13 +57,26 @@ export const getCurrentUser = async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
   
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('user_id', user.id)
-    .single()
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+    
+    if (profile) return profile
+  } catch (err) {
+    console.warn('Profile not found, using default:', err.message)
+  }
   
-  return profile || { ...user, name: user.email.split('@')[0], role: 'employee' }
+  return { 
+    id: user.id,
+    user_id: user.id,
+    name: user.email?.split('@')[0] || 'User', 
+    email: user.email,
+    role: 'employee',
+    department: ''
+  }
 }
 
 export const getProfile = async (userId) => {
