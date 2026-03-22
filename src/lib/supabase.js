@@ -3,7 +3,36 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://nmrzthhiafbmeievbwtq.supabase.co'
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tcnp0aGhpYWZibWVpZXZid3RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNDQ5MDcsImV4cCI6MjA4OTcyMDkwN30.e9eyLx4Nn6iZejrtsfCc10S1yR0xz3NPkOg5xtfeuXk'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    storage: {
+      getItem: (key) => {
+        try {
+          return localStorage.getItem(key)
+        } catch {
+          return null
+        }
+      },
+      setItem: (key, value) => {
+        try {
+          localStorage.setItem(key, value)
+        } catch {
+          // Ignore storage errors
+        }
+      },
+      removeItem: (key) => {
+        try {
+          localStorage.removeItem(key)
+        } catch {
+          // Ignore storage errors
+        }
+      }
+    }
+  }
+})
 
 export const signUp = async (email, password, name, role = 'employee', department = '') => {
   const { data, error } = await supabase.auth.signUp({
