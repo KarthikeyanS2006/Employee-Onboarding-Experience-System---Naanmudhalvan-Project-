@@ -232,3 +232,27 @@ DO $$
 BEGIN
   RAISE NOTICE 'OnboardX database setup complete!';
 END $$;
+
+-- =============================================
+-- DEMO ACCOUNTS
+-- Run the following AFTER creating users in Supabase Auth Dashboard
+-- =============================================
+
+-- NOTE: First create these users in Supabase Dashboard > Authentication > Users:
+-- 1. employee@demo.com (password: demo123)
+-- 2. mentor@demo.com (password: demo123)  
+-- 3. hr@demo.com (password: demo123)
+
+-- Then run these INSERT statements to create their profiles:
+
+-- INSERT INTO profiles (user_id, name, email, role, department, joining_date)
+-- VALUES 
+--   ('<EMPLOYEE_UUID>', 'Demo Employee', 'employee@demo.com', 'employee', 'Engineering', CURRENT_DATE),
+--   ('<MENTOR_UUID>', 'Demo Mentor', 'mentor@demo.com', 'mentor', 'Engineering', CURRENT_DATE),
+--   ('<HR_UUID>', 'Demo HR Admin', 'hr@demo.com', 'hr', 'Human Resources', CURRENT_DATE);
+
+-- After running the SQL setup, use the Create Demo Users button in the app login page
+-- or manually create users in Supabase Auth Dashboard with these emails:
+-- - employee@demo.com
+-- - mentor@demo.com  
+-- - hr@demo.com

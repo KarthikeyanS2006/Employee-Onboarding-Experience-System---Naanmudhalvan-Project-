@@ -2,12 +2,42 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
-import { Eye, EyeOff, ArrowRight, Users, Shield, Briefcase } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, Users, Shield, Briefcase, UserCircle, GraduationCap, Building2, Wand2 } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+
+const DEMO_ACCOUNTS = [
+  {
+    role: 'employee',
+    label: 'Employee',
+    description: 'New hire onboarding',
+    icon: UserCircle,
+    email: 'employee@demo.com',
+    color: 'blue'
+  },
+  {
+    role: 'mentor',
+    label: 'Mentor',
+    description: 'Guide & train employees',
+    icon: GraduationCap,
+    email: 'mentor@demo.com',
+    color: 'purple'
+  },
+  {
+    role: 'hr',
+    label: 'HR Admin',
+    description: 'Manage & monitor onboarding',
+    icon: Building2,
+    email: 'hr@demo.com',
+    color: 'green'
+  }
+]
 
 export default function Login() {
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [selectedRole, setSelectedRole] = useState(null)
+  const [creatingDemo, setCreatingDemo] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -19,6 +49,51 @@ export default function Login() {
   
   const { login, register } = useAuth()
   const navigate = useNavigate()
+
+  const handleQuickLogin = (account) => {
+    setSelectedRole(account.role)
+    setIsLogin(true)
+    setFormData(prev => ({
+      ...prev,
+      email: account.email,
+      password: 'demo123',
+      role: account.role
+    }))
+  }
+
+  const handleCreateDemoAccounts = async () => {
+    setCreatingDemo(true)
+    try {
+      const demoUsers = [
+        { email: 'employee@demo.com', name: 'Demo Employee', role: 'employee', department: 'Engineering' },
+        { email: 'mentor@demo.com', name: 'Demo Mentor', role: 'mentor', department: 'Engineering' },
+        { email: 'hr@demo.com', name: 'Demo HR Admin', role: 'hr', department: 'Human Resources' }
+      ]
+
+      for (const user of demoUsers) {
+        const { error } = await supabase.auth.signUp({
+          email: user.email,
+          password: 'demo123',
+          options: {
+            data: {
+              name: user.name,
+              role: user.role,
+              department: user.department
+            }
+          }
+        })
+        if (error && error.message !== 'User already registered') {
+          console.warn(`Error creating ${user.email}:`, error.message)
+        }
+      }
+      
+      toast.success('Demo accounts created! You can now login.')
+    } catch (error) {
+      toast.error('Failed to create demo accounts')
+    } finally {
+      setCreatingDemo(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -116,99 +191,159 @@ export default function Login() {
             </div>
 
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8">
-              <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
-                  {isLogin ? 'Welcome back' : 'Create account'}
-                </h2>
-                <p className="mt-1 text-gray-500 text-sm">
-                  {isLogin ? 'Sign in to continue' : 'Start your onboarding journey'}
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {!isLogin && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                      <input type="text" name="name" value={formData.name} onChange={handleChange}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="John Smith" required />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                      <select name="role" value={formData.role} onChange={handleChange}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="employee">New Employee</option>
-                        <option value="mentor">Mentor / Manager</option>
-                        <option value="hr">HR Admin</option>
-                      </select>
-                    </div>
-
-                    {formData.role === 'employee' && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                        <select name="department" value={formData.department} onChange={handleChange}
-                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                          <option value="">Select department</option>
-                          <option value="Engineering">Engineering</option>
-                          <option value="Marketing">Marketing</option>
-                          <option value="Sales">Sales</option>
-                          <option value="HR">Human Resources</option>
-                          <option value="Finance">Finance</option>
-                        </select>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="you@company.com" required />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                  <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-                      placeholder="••••••••" required minLength={6} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              {isLogin && !selectedRole && (
+                <>
+                  <div className="text-center mb-6">
+                    <h2 className="text-xl font-bold text-gray-900">Select Your Role</h2>
+                    <p className="mt-1 text-gray-500 text-sm">Choose how you want to login</p>
+                  </div>
+                  <div className="space-y-3">
+                    {DEMO_ACCOUNTS.map((account) => {
+                      const Icon = account.icon
+                      const colorClasses = {
+                        blue: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100',
+                        purple: 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100',
+                        green: 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'
+                      }
+                      return (
+                        <button
+                          key={account.role}
+                          onClick={() => handleQuickLogin(account)}
+                          className={`w-full p-4 rounded-lg border transition-all flex items-center gap-4 ${colorClasses[account.color]}`}
+                        >
+                          <Icon className="w-8 h-8" />
+                          <div className="text-left flex-1">
+                            <p className="font-semibold">{account.label}</p>
+                            <p className="text-sm opacity-75">{account.description}</p>
+                          </div>
+                          <ArrowRight className="w-5 h-5" />
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-6 pt-6 border-t border-gray-200 space-y-3">
+                    <button 
+                      onClick={handleCreateDemoAccounts} 
+                      disabled={creatingDemo}
+                      className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                    >
+                      {creatingDemo ? (
+                        <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <><Wand2 className="w-4 h-4" /> Create Demo Accounts</>
+                      )}
+                    </button>
+                    <p className="text-center text-xs text-gray-400">Creates: employee@demo.com, mentor@demo.com, hr@demo.com</p>
+                    <button onClick={() => setIsLogin(false)} className="w-full text-center text-sm text-gray-500">
+                      New here? <span className="text-blue-600 font-medium hover:underline">Create account</span>
                     </button>
                   </div>
-                </div>
+                </>
+              )}
 
-                {!isLogin && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                    <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="••••••••" required minLength={6} />
+              {(selectedRole || !isLogin) && (
+                <>
+                  <div className="text-center mb-6">
+                    <button 
+                      onClick={() => { setSelectedRole(null); setIsLogin(true) }} 
+                      className="text-sm text-gray-500 hover:text-gray-700 mb-2"
+                    >
+                      ← Change role
+                    </button>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {isLogin ? 'Welcome back' : 'Create account'}
+                    </h2>
+                    <p className="mt-1 text-gray-500 text-sm">
+                      {isLogin ? 'Sign in to continue' : 'Start your onboarding journey'}
+                    </p>
                   </div>
-                )}
 
-                <button type="submit" disabled={loading}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-                  {loading ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>{isLogin ? 'Sign In' : 'Create Account'}<ArrowRight className="w-5 h-5" /></>
-                  )}
-                </button>
-              </form>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {!isLogin && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                          <input type="text" name="name" value={formData.name} onChange={handleChange}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="John Smith" required />
+                        </div>
 
-              <div className="mt-4 text-center">
-                <p className="text-gray-500 text-sm">
-                  {isLogin ? "Don't have an account?" : 'Already have an account?'}
-                  <button onClick={() => setIsLogin(!isLogin)} className="ml-2 text-blue-600 hover:text-blue-700 font-medium">
-                    {isLogin ? 'Sign up' : 'Sign in'}
-                  </button>
-                </p>
-              </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                          <select name="role" value={formData.role} onChange={handleChange}
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="employee">New Employee</option>
+                            <option value="mentor">Mentor / Manager</option>
+                            <option value="hr">HR Admin</option>
+                          </select>
+                        </div>
+
+                        {formData.role === 'employee' && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                            <select name="department" value={formData.department} onChange={handleChange}
+                              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                              <option value="">Select department</option>
+                              <option value="Engineering">Engineering</option>
+                              <option value="Marketing">Marketing</option>
+                              <option value="Sales">Sales</option>
+                              <option value="HR">Human Resources</option>
+                              <option value="Finance">Finance</option>
+                            </select>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" name="email" value={formData.email} onChange={handleChange}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="you@company.com" required />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <div className="relative">
+                        <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                          placeholder="••••••••" required minLength={6} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {!isLogin && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                        <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="••••••••" required minLength={6} />
+                      </div>
+                    )}
+
+                    <button type="submit" disabled={loading}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                      {loading ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>{isLogin ? 'Sign In' : 'Create Account'}<ArrowRight className="w-5 h-5" /></>
+                      )}
+                    </button>
+                  </form>
+
+                  <div className="mt-4 text-center">
+                    <p className="text-gray-500 text-sm">
+                      {isLogin ? "Don't have an account?" : 'Already have an account?'}
+                      <button onClick={() => setIsLogin(!isLogin)} className="ml-2 text-blue-600 hover:text-blue-700 font-medium">
+                        {isLogin ? 'Sign up' : 'Sign in'}
+                      </button>
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

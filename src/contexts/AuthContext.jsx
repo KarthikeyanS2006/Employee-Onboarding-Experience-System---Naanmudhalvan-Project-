@@ -11,10 +11,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const currentUser = await getCurrentUser()
-        if (currentUser) {
-          setUser(currentUser)
-          setProfile(currentUser)
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          const profileData = await getCurrentUser()
+          if (profileData) {
+            setUser(profileData)
+            setProfile(profileData)
+          }
         }
       } catch (error) {
         console.error('Auth init error:', error)
@@ -40,7 +43,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (email, password) => {
-    const data = await signIn(email, password)
+    await signIn(email, password)
     const profileData = await getCurrentUser()
     setUser(profileData)
     setProfile(profileData)
@@ -48,7 +51,7 @@ export function AuthProvider({ children }) {
   }
 
   const register = async (email, password, name, role, department) => {
-    const data = await signUp(email, password, name, role, department)
+    await signUp(email, password, name, role, department)
     const profileData = await getCurrentUser()
     setUser(profileData)
     setProfile(profileData)
