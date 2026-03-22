@@ -50,18 +50,20 @@ export const signUp = async (email, password, name, role = 'employee', departmen
   if (error) throw error
   
   if (data.user) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        user_id: data.user.id,
-        name,
-        email,
-        role,
-        department,
-        joining_date: new Date().toISOString().split('T')[0]
-      })
-    
-    if (profileError) console.error('Profile creation error:', profileError)
+    try {
+      await supabase
+        .from('profiles')
+        .insert({
+          user_id: data.user.id,
+          name,
+          email,
+          role,
+          department,
+          joining_date: new Date().toISOString().split('T')[0]
+        })
+    } catch (err) {
+      console.warn('Profile table not available, using metadata only:', err.message)
+    }
   }
   
   return data
@@ -83,28 +85,39 @@ export const signOut = async () => {
 }
 
 export const getCurrentUser = async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return null
   
   try {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', user.id)
       .single()
     
-    if (profile) return profile
+    if (profileError) {
+      console.warn('Profile not found, using auth data:', profileError.message)
+      return { 
+        id: user.id,
+        user_id: user.id,
+        name: user.user_metadata?.name || user.email?.split('@')[0] || 'User', 
+        email: user.email,
+        role: user.user_metadata?.role || 'employee',
+        department: user.user_metadata?.department || ''
+      }
+    }
+    
+    return profile
   } catch (err) {
-    console.warn('Profile not found, using default:', err.message)
-  }
-  
-  return { 
-    id: user.id,
-    user_id: user.id,
-    name: user.email?.split('@')[0] || 'User', 
-    email: user.email,
-    role: 'employee',
-    department: ''
+    console.warn('Profile fetch error, using auth data:', err.message)
+    return { 
+      id: user.id,
+      user_id: user.id,
+      name: user.user_metadata?.name || user.email?.split('@')[0] || 'User', 
+      email: user.email,
+      role: user.user_metadata?.role || 'employee',
+      department: user.user_metadata?.department || ''
+    }
   }
 }
 

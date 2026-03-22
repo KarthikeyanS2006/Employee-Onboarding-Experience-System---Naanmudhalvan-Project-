@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase, signIn, signUp, signOut, getCurrentUser } from '../lib/supabase'
+import { supabase, signIn, signUp, signOut } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
@@ -8,16 +8,26 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const getProfileFromUser = (authUser) => {
+    if (!authUser) return null
+    return { 
+      id: authUser.id,
+      user_id: authUser.id,
+      name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User', 
+      email: authUser.email,
+      role: authUser.user_metadata?.role || 'employee',
+      department: authUser.user_metadata?.department || ''
+    }
+  }
+
   useEffect(() => {
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
-          const profileData = await getCurrentUser()
-          if (profileData) {
-            setUser(profileData)
-            setProfile(profileData)
-          }
+          const profileData = getProfileFromUser(session.user)
+          setUser(profileData)
+          setProfile(profileData)
         }
       } catch (error) {
         console.error('Auth init error:', error)
@@ -28,9 +38,9 @@ export function AuthProvider({ children }) {
 
     initAuth()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        const profileData = await getCurrentUser()
+        const profileData = getProfileFromUser(session.user)
         setUser(profileData)
         setProfile(profileData)
       } else {
@@ -43,16 +53,18 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (email, password) => {
-    await signIn(email, password)
-    const profileData = await getCurrentUser()
+    const { data, error } = await signIn(email, password)
+    if (error) throw error
+    const profileData = getProfileFromUser(data.user)
     setUser(profileData)
     setProfile(profileData)
     return profileData
   }
 
   const register = async (email, password, name, role, department) => {
-    await signUp(email, password, name, role, department)
-    const profileData = await getCurrentUser()
+    const { data, error } = await signUp(email, password, name, role, department)
+    if (error) throw error
+    const profileData = getProfileFromUser(data.user)
     setUser(profileData)
     setProfile(profileData)
     return profileData
