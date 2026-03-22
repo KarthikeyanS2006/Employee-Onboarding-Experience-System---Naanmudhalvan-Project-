@@ -274,19 +274,36 @@ const tips = await getFeedback(60, ['phishing', 'passwords'], 'Security Quiz')
 
 ## Deployment
 
-### Vercel
+### Vercel (Recommended)
 
-1. Install Vercel CLI:
+1. **One-click Deploy**: 
+   - Click the button below or visit [vercel.com/new](https://vercel.com/new)
+   - Import your GitHub repository
+   - Add environment variables in Vercel dashboard:
+     - `VITE_SUPABASE_URL`
+     - `VITE_SUPABASE_ANON_KEY`
+     - `VITE_GROQ_API_KEY`
+   - Deploy!
+
+2. **CLI Deployment**:
 ```bash
 npm i -g vercel
+vercel login
+vercel --prod
 ```
 
-2. Deploy:
-```bash
-vercel
-```
+3. **Manual Setup**:
+   - Build the project: `npm run build`
+   - Deploy the `dist` folder to Vercel
 
-3. Set environment variables in Vercel dashboard
+### Environment Variables
+
+Create a `.env` file (or set in Vercel dashboard):
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_GROQ_API_KEY=your_groq_api_key
+```
 
 ### Build for Production
 
