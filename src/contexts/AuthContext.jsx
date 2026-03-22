@@ -13,10 +13,11 @@ export function AuthProvider({ children }) {
     return { 
       id: authUser.id,
       user_id: authUser.id,
-      name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User', 
+      name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User', 
       email: authUser.email,
       role: authUser.user_metadata?.role || 'employee',
-      department: authUser.user_metadata?.department || ''
+      department: authUser.user_metadata?.department || '',
+      avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || null
     }
   }
 
