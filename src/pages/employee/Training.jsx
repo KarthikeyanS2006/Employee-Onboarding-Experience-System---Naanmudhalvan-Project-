@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import { Badge } from '../../components/ui/Badge'
+import Button from '../../components/ui/Button'
 import { LoadingPage } from '../../components/ui/Loading'
 import { calculateProgress } from '../../lib/utils'
 import {
