@@ -5,12 +5,27 @@ import toast from 'react-hot-toast'
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || ''
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
+const FALLBACK_QUIZ = {
+  questions: [
+    { question: "What is our company's primary mission?", options: ["Profit maximization", "Customer satisfaction", "Employee growth", "Innovation first"], correct: 1 },
+    { question: "How often should you update your task progress in the project management tool?", options: ["Weekly", "Daily", "Monthly", "When asked"], correct: 1 },
+    { question: "What should you do if you encounter a security threat?", options: ["Ignore it", "Report to IT immediately", "Fix it yourself", "Tell a colleague"], correct: 1 },
+    { question: "Which communication channel should be used for urgent matters?", options: ["Email", "Slack", "Phone/Teams call", "Project board"], correct: 2 },
+    { question: "How often are performance reviews conducted?", options: ["Monthly", "Quarterly", "Annually", "Bi-annually"], correct: 3 }
+  ]
+}
+
 export const useGroq = () => {
   const [loading, setLoading] = useState(false)
 
   const generateQuiz = async (topic, numQuestions = 5) => {
     setLoading(true)
     try {
+      if (!GROQ_API_KEY) {
+        toast.error('AI API key not configured. Using sample quiz.')
+        return FALLBACK_QUIZ
+      }
+
       const response = await axios.post(
         GROQ_API_URL,
         {
@@ -43,13 +58,23 @@ Keep questions simple and appropriate for new employees. Make sure the JSON is v
       const content = response.data.choices[0].message.content.trim()
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0])
+        const parsed = JSON.parse(jsonMatch[0])
+        if (parsed.questions && parsed.questions.length > 0) {
+          return parsed
+        }
       }
-      throw new Error('Invalid JSON response')
+      toast.error('Could not parse AI response. Using sample quiz.')
+      return FALLBACK_QUIZ
     } catch (error) {
       console.error('AI Quiz generation error:', error)
-      toast.error('AI quiz generation failed. Using fallback questions.')
-      return null
+      if (error.response?.status === 401) {
+        toast.error('Invalid API key. Using sample quiz.')
+      } else if (error.message?.includes('image')) {
+        toast.error('Image processing not supported. Using sample quiz.')
+      } else {
+        toast.error('AI unavailable. Using sample quiz.')
+      }
+      return FALLBACK_QUIZ
     } finally {
       setLoading(false)
     }
@@ -58,10 +83,14 @@ Keep questions simple and appropriate for new employees. Make sure the JSON is v
   const getFeedback = async (score, missedTopics, moduleName) => {
     setLoading(true)
     try {
+      if (!GROQ_API_KEY) {
+        return "Great effort! Review the missed topics and try again. Your mentor is here to help you succeed."
+      }
+
       const response = await axios.post(
         GROQ_API_URL,
         {
-          model: 'mixtral-8x7b-32768',
+          model: 'llama-3.1-8b-instant',
           messages: [{
             role: 'user',
             content: `Employee scored ${score}% on "${moduleName}" quiz. They struggled with: ${missedTopics.join(', ') || 'general concepts'}. 
