@@ -7,7 +7,7 @@ import Button from '../../components/ui/Button'
 import { LoadingPage } from '../../components/ui/Loading'
 import { useGroq } from '../../hooks/useGroq'
 import { calculateProgress } from '../../lib/utils'
-import { Play, Clock, CheckCircle2, BookOpen, FileText, HelpCircle, ChevronRight, Sparkles, Loader2, MessageSquare } from 'lucide-react'
+import { Play, Clock, CheckCircle2, BookOpen, FileText, HelpCircle, ChevronRight, Sparkles, Loader2, MessageSquare, X, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const departmentModules = {
@@ -72,6 +72,7 @@ export default function EmployeeTraining() {
   const [modules, setModules] = useState([])
   const [filter, setFilter] = useState('all')
   const [showAIGenerate, setShowAIGenerate] = useState(false)
+  const [generatedQuiz, setGeneratedQuiz] = useState(null)
 
   useEffect(() => {
     const dept = profile?.department || 'Default'
@@ -86,11 +87,22 @@ export default function EmployeeTraining() {
     setShowAIGenerate(true)
     const topic = profile?.department ? `${profile.department} training and best practices` : 'company onboarding'
     const quizData = await generateQuiz(topic, 5)
-    if (quizData) {
-      toast.success('AI Quiz generated successfully!')
-      console.log('Generated Quiz:', quizData)
+    if (quizData && quizData.questions) {
+      setGeneratedQuiz(quizData)
+      toast.success('AI Quiz generated successfully! Click to take the quiz.')
     }
     setShowAIGenerate(false)
+  }
+
+  const handleTakeAIQuiz = () => {
+    if (generatedQuiz) {
+      localStorage.setItem('aiGeneratedQuiz', JSON.stringify(generatedQuiz))
+      navigate('/employee/quiz/ai')
+    }
+  }
+
+  const handleCloseAIQuiz = () => {
+    setGeneratedQuiz(null)
   }
 
   if (loading) return <LoadingPage message="Loading modules..." />
@@ -122,6 +134,41 @@ export default function EmployeeTraining() {
           <CardContent className="p-4 flex items-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
             <span className="text-blue-700">AI is generating a custom quiz for your department...</span>
+          </CardContent>
+        </Card>
+      )}
+
+      {generatedQuiz && (
+        <Card className="border-purple-300 bg-gradient-to-r from-purple-50 to-blue-50">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">AI Generated Quiz</h3>
+                  <p className="text-sm text-gray-500">{generatedQuiz.questions?.length || 0} Questions • {profile?.department || 'Custom'} Topic</p>
+                </div>
+              </div>
+              <button onClick={handleCloseAIQuiz} className="p-1 hover:bg-gray-200 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            <div className="space-y-2 mb-4">
+              {generatedQuiz.questions?.slice(0, 3).map((q, i) => (
+                <div key={i} className="text-sm text-gray-600 flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-medium flex-shrink-0">{i + 1}</span>
+                  <span className="line-clamp-1">{q.question}</span>
+                </div>
+              ))}
+              {generatedQuiz.questions?.length > 3 && (
+                <p className="text-xs text-gray-400 pl-7">+{generatedQuiz.questions.length - 3} more questions</p>
+              )}
+            </div>
+            <Button variant="primary" className="w-full" onClick={handleTakeAIQuiz}>
+              Take AI Quiz <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
           </CardContent>
         </Card>
       )}

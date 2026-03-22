@@ -6,6 +6,7 @@ import EmployeeDashboard from './pages/employee/Dashboard'
 import EmployeeTraining from './pages/employee/Training'
 import EmployeeTrainingDetail from './pages/employee/TrainingDetail'
 import EmployeeQuiz from './pages/employee/Quiz'
+import EmployeeAIGuiz from './pages/employee/AIGuiz'
 import EmployeeDocuments from './pages/employee/Documents'
 import EmployeeFeedback from './pages/employee/Feedback'
 import EmployeeMentor from './pages/employee/Mentor'
@@ -84,6 +85,7 @@ function AppRoutes() {
         <Route path="training" element={<EmployeeTraining />} />
         <Route path="training/:id" element={<EmployeeTrainingDetail />} />
         <Route path="quiz/:id" element={<EmployeeQuiz />} />
+        <Route path="quiz/ai" element={<EmployeeAIGuiz />} />
         <Route path="documents" element={<EmployeeDocuments />} />
         <Route path="feedback" element={<EmployeeFeedback />} />
         <Route path="mentor" element={<EmployeeMentor />} />
